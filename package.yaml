@@ -1,0 +1,12 @@
+name: union-type
+
+dependencies:
+  - base
+  - mtl
+
+when:
+  - condition: impl(ghc >=7.10)
+    cpp-options: -DDEPRECATED_LANGUAGE_OVERLAPPING_INSTANCES
+
+library:
+  source-dirs: [src]
