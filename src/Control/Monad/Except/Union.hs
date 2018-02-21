@@ -1,7 +1,10 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MonoLocalBinds #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
 -- |
 -- Module:      Control.Monad.Except.Union
@@ -40,11 +43,12 @@ import Data.Bifunctor (first)
 import Data.Coerce (coerce)
 
 import Control.Monad.Except (ExceptT(ExceptT), MonadError)
-import Control.Monad.Reader (MonadReader)
-import Control.Monad.Writer (MonadWriter)
+import Control.Monad.Morph (MFunctor(hoist), MMonad(embed))
 import Control.Monad.RWS (MonadRWS)
+import Control.Monad.Reader (MonadReader)
 import Control.Monad.State (MonadState)
 import Control.Monad.Trans (MonadTrans)
+import Control.Monad.Writer (MonadWriter)
 
 import Data.Union.Internal
 
@@ -69,6 +73,24 @@ newtype UnionExceptT errs m a = UnionExceptT
     , MonadTrans
     , MonadWriter w
     )
+
+instance MFunctor (UnionExceptT errs) where
+    hoist = mapUnionExceptT
+        :: forall m n a
+        .  (forall b. m b -> n b)
+        -> UnionExceptT errs m a
+        -> UnionExceptT errs n a
+    {-# INLINE hoist #-}
+
+instance MMonad (UnionExceptT errs) where
+    embed f m =
+        unionExceptT $ joinResult <$> runUnionExceptT (f (runUnionExceptT m))
+      where
+        joinResult = \case
+            Left         e  -> Left e
+            Right (Left  e) -> Left e
+            Right (Right a) -> Right a
+    {-# INLINE embed #-}
 
 runUnionExceptT :: UnionExceptT errs m a -> m (Either (Union errs) a)
 runUnionExceptT = coerce
@@ -103,12 +125,12 @@ weakenE2
     => UnionExceptT errs m a
     -> UnionExceptT (e1 ': e2 ': errs) m a
 weakenE2 = mapUnionExceptT (first (weaken . weaken) <$>)
+{-# INLINE weakenE2 #-}
 
 -- }}} UnionExceptT -----------------------------------------------------------
 
 -- {{{ Exception operations ---------------------------------------------------
 
-{-# INLINE weakenE2 #-}
 throwE
     :: (Monad m, Member e errs)
     => e

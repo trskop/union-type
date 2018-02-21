@@ -2,11 +2,15 @@ name: union-type
 
 dependencies:
   - base
+  - mmorph
   - mtl
 
 when:
   - condition: impl(ghc >=7.10)
     cpp-options: -DDEPRECATED_LANGUAGE_OVERLAPPING_INSTANCES
+
+ghc-options:
+  - -Wall
 
 library:
   source-dirs: [src]
