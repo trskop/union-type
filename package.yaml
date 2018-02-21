@@ -2,6 +2,7 @@ name: union-type
 
 dependencies:
   - base
+  - exceptions
   - mmorph
   - mtl
 

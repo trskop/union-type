@@ -42,6 +42,11 @@ import Control.Monad.IO.Class (MonadIO)
 import Data.Bifunctor (first)
 import Data.Coerce (coerce)
 
+import Control.Monad.Catch
+    ( MonadThrow
+    , MonadCatch
+    , MonadMask(mask, uninterruptibleMask)
+    )
 import Control.Monad.Except (ExceptT(ExceptT), MonadError)
 import Control.Monad.Morph (MFunctor(hoist), MMonad(embed))
 import Control.Monad.RWS (MonadRWS)
@@ -64,12 +69,14 @@ newtype UnionExceptT errs m a = UnionExceptT
     , Foldable
     , Functor
     , Monad
+    , MonadCatch
     , MonadError (Union errs)
     , MonadFail
     , MonadIO
     , MonadRWS r w s
     , MonadReader r
     , MonadState s
+    , MonadThrow
     , MonadTrans
     , MonadWriter w
     )
@@ -87,10 +94,19 @@ instance MMonad (UnionExceptT errs) where
         unionExceptT $ joinResult <$> runUnionExceptT (f (runUnionExceptT m))
       where
         joinResult = \case
-            Left         e  -> Left e
+            Left  e         -> Left e
             Right (Left  e) -> Left e
             Right (Right a) -> Right a
     {-# INLINE embed #-}
+
+instance MonadMask m => MonadMask (UnionExceptT errs m) where
+    mask f = unionExceptT $ mask $ \restore ->
+        runUnionExceptT (f (mapUnionExceptT restore))
+    {-# INLINE mask #-}
+
+    uninterruptibleMask f = unionExceptT $ uninterruptibleMask $ \restore ->
+        runUnionExceptT (f (mapUnionExceptT restore))
+    {-# INLINE uninterruptibleMask #-}
 
 runUnionExceptT :: UnionExceptT errs m a -> m (Either (Union errs) a)
 runUnionExceptT = coerce
