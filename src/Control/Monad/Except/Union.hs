@@ -1,8 +1,10 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MonoLocalBinds #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
@@ -37,9 +39,15 @@ module Control.Monad.Except.Union
     )
   where
 
+import Control.Applicative (Applicative, pure)
+import Control.Monad (Monad, (>>=))
 import Control.Monad.Fail (MonadFail)
 import Control.Monad.IO.Class (MonadIO)
 import Data.Bifunctor (first)
+import Data.Either (Either(Left, Right), either)
+import Data.Function (($), (.), flip)
+import Data.Functor (Functor, (<$>), fmap)
+import Data.Foldable (Foldable)
 import Data.Coerce (coerce)
 
 import Control.Monad.Catch
@@ -55,7 +63,12 @@ import Control.Monad.State (MonadState)
 import Control.Monad.Trans (MonadTrans)
 import Control.Monad.Writer (MonadWriter)
 
-import Data.Union.Internal
+import Control.Monad.Except.Union.Class (MonadThrowError, MonadTransCatchError)
+import qualified Control.Monad.Except.Union.Class as Class
+    ( MonadThrowError(throwError)
+    , MonadTransCatchError(handleErrorT)
+    )
+import Data.Union.Internal (Member, Union, inj, decomp, weaken)
 
 
 -- {{{ UnionExceptT -----------------------------------------------------------
@@ -107,6 +120,12 @@ instance MonadMask m => MonadMask (UnionExceptT errs m) where
     uninterruptibleMask f = unionExceptT $ uninterruptibleMask $ \restore ->
         runUnionExceptT (f (mapUnionExceptT restore))
     {-# INLINE uninterruptibleMask #-}
+
+instance MonadTransCatchError UnionExceptT where
+    handleErrorT = handleE
+
+instance Monad m => MonadThrowError errs (UnionExceptT errs m) where
+    throwError = throwE
 
 runUnionExceptT :: UnionExceptT errs m a -> m (Either (Union errs) a)
 runUnionExceptT = coerce
@@ -172,4 +191,4 @@ catchE
 catchE = flip handleE
 {-# INLINE catchE #-}
 
--- {{{ Exception operations ---------------------------------------------------
+-- }}} Exception operations ---------------------------------------------------
