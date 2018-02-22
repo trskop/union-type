@@ -1,17 +1,65 @@
 name: union-type
+version: 0.1.0.0
+category: Data, Control
+synopsis: Type-indexed open co-product (sum) type.
+description: |
+  Implementation of type-indexed open co-product (sum) type that is a dual to
+  heterogenous list (HList).
+  .
+  This work is based on:
+  <http://hackage.haskell.org/package/freer-effects freer-effects>, which is
+  based on the work of Oleg Kiselyov et al.:
+  .
+  * <http://okmij.org/ftp/Haskell/extensible/more.pdf Freer Monads, More Extensible Effects>
+  .
+  * <http://okmij.org/ftp/Haskell/zseq.pdf Reflection without Remorse>
+  .
+  * <http://okmij.org/ftp/Haskell/extensible/exteff.pdf Extensible Effects>
+
+github: trskop/union-type
+license: BSD3
+author: Peter Trško
+maintainer: peter.trsko@gmail.com
+copyright: (c) 2018 Peter Trško
+
+extra-source-files:
+  - README.md
+  - ChangeLog.md
+
+flags:
+  pedantic:
+    description: Pass additional warning flags and -Werror to GHC.
+    manual: true
+    default: false
+
+  test-hlint:
+    description: Enable test suite that checks sources using HLint.
+    manual: true
+    default: false
 
 dependencies:
-  - base
+  - base >=4.8 && <5
+    # ^ Depending on Data.Bifunctors.
   - exceptions
   - mmorph
   - mtl
 
 when:
+  - condition: flag(pedantic)
+    ghc-options:
+      - -Werror
+      - -Wimplicit-prelude
+      - -Wmissing-import-lists
+
   - condition: impl(ghc >=7.10)
     cpp-options: -DDEPRECATED_LANGUAGE_OVERLAPPING_INSTANCES
+
+  - condition: impl(ghc >=8)
+    ghc-options:
+      - -Wredundant-constraints
 
 ghc-options:
   - -Wall
 
 library:
-  source-dirs: [src]
+  source-dirs: src

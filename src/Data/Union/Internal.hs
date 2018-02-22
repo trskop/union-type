@@ -22,7 +22,7 @@
 
 -- |
 -- Module:       Data.Union.Internal
--- Description:  Open unions (type-indexed co-products) for extensible effects.
+-- Description:  Open unions (type-indexed co-products).
 --
 -- Copyright:    (c) 2016 Allele Dev; 2017 Ixperta Solutions s.r.o.;
 --               2018 Peter Trško
@@ -35,8 +35,8 @@
 -- guarantees that the API of this module will be preserved between minor
 -- versions of this package.
 --
--- Open unions (type-indexed co-products, i.e. type-indexed sums) for
--- extensible effects All operations are constant-time.
+-- Open unions (type-indexed co-products, i.e. type-indexed sums).
+-- All operations are in constant-time.
 --
 -- Based on
 -- <http://okmij.org/ftp/Haskell/extensible/OpenUnion51.hs OpenUnion51.hs>.
@@ -193,7 +193,7 @@ weaken (Union n a) = Union (n + 1) a
 -- makes no guarantees about those values being equal.
 --
 -- /O(1)/
-eqMember :: r ~ r' => Union r -> Union r' -> Bool
+eqMember :: Union r -> Union r -> Bool
 eqMember (Union n1 _) (Union n2 _) = n1 == n2
 
 -- | Check if open contains specific value.
